@@ -1,0 +1,8 @@
+[package]
+name = "timelapse"
+version = "0.1.0"
+authors = ["Michael Daffin <michael@daffin.io>"]
+edition = "2018"
+
+[dependencies]
+chrono = "0.4.15"

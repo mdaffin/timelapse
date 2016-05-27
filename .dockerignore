@@ -1,0 +1,4 @@
+**/target/
+Dockerfile*
+.resin-sync.yml
+*.md

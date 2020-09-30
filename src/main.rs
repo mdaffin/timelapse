@@ -12,12 +12,8 @@ struct Opts {
     #[clap(short, long, env = "IMAGE_DIR", default_value = "data")]
     image_dir: PathBuf,
 
-    /// Path to the site root
-    #[clap(short, long, env = "SITE_DIR", default_value = "dist")]
-    site_dir: PathBuf,
-
     /// The address to listen on
-    #[clap(short, long, env = "ADDR", default_value = "127.0.0.1:8080")]
+    #[clap(short, long, env = "ADDR", default_value = "127.0.0.1:8181")]
     address: String,
 }
 
@@ -25,7 +21,7 @@ struct Opts {
 async fn api() -> HttpResponse {
     HttpResponse::build(StatusCode::OK)
         .content_type("text/json; charset=utf-8")
-        .body(r#"{}"#)
+        .body("{}")
 }
 
 #[actix_web::main]
@@ -65,7 +61,6 @@ async fn main() -> std::io::Result<()> {
     });
 
     let image_dir = opts.image_dir.clone();
-    let site_dir = opts.site_dir.clone();
     info!("Starting webserver on {}", &opts.address);
     HttpServer::new(move || {
         App::new()
@@ -74,7 +69,6 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .service(actix_files::Files::new("/images", &image_dir).show_files_listing())
             .service(api)
-            .service(actix_files::Files::new("/", &site_dir).index_file("index.html"))
     })
     .bind(opts.address)?
     .workers(1)

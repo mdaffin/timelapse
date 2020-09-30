@@ -1,9 +1,47 @@
 use chrono::Utc;
-use std::{process, thread, time};
+use log::*;
+use std::{thread, time, path::PathBuf};
 
-fn main() {
-    thread::spawn(|| loop {
-        let _ = process::Command::new("raspistill")
+use actix_web::{get, middleware, App, HttpResponse, http::StatusCode, HttpServer};
+use clap::Clap;
+
+#[derive(Clap, Clone)]
+#[clap(version = "1.0")]
+struct Opts {
+    /// Path to the place to store the timelapse images
+    #[clap(short, long, env = "IMAGE_DIR", default_value = "data")]
+    image_dir: PathBuf,
+
+    /// Path to the site root
+    #[clap(short, long, env = "SITE_DIR", default_value = "dist")]
+    site_dir: PathBuf,
+
+    /// The address to listen on
+    #[clap(short, long, env = "ADDR", default_value = "127.0.0.1:8080")]
+    address: String,
+}
+
+#[get("/api")]
+async fn api() -> HttpResponse {
+    HttpResponse::build(StatusCode::OK)
+        .content_type("text/json; charset=utf-8")
+        .body(r#"{}"#)
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", "info,actix_server=info,actix_web=info");
+    }
+    env_logger::init();
+
+    let opts: Opts = Opts::parse();
+
+    let image_dir = opts.image_dir.clone();
+    info!("Starting camera loop");
+    thread::spawn(move || loop {
+        info!("Running raspistill");
+        let status = std::process::Command::new("raspistill")
             .args(&[
                 "-t",
                 "1000",
@@ -12,13 +50,34 @@ fn main() {
                 "--awb",
                 "greyworld",
                 "-o",
-                &format!("/data/{}.jpg", Utc::now().to_rfc3339()),
+                image_dir.join(&format!("{}.jpg", Utc::now().to_rfc3339())).to_str().unwrap(),
             ])
             .status();
+        match status {
+                Ok(status) => match status.code() {
+                    Some(code) if !status.success() => error!("raspistill exited with exit status {}", code),
+                    None => error!("raspistill terminated by signal"),
+                    _ => debug!("raspistill ran successfully"),
+                },
+                Err(err) => error!("{}", err),
+            }
         thread::sleep(time::Duration::from_secs(60));
     });
 
-    loop {
-        thread::sleep(time::Duration::from_secs(60));
-    }
+    let image_dir = opts.image_dir.clone();
+    let site_dir = opts.site_dir.clone();
+    info!("Starting webserver on {}", &opts.address);
+    HttpServer::new(move || {
+        App::new()
+            .wrap(middleware::DefaultHeaders::new().header("X-Version", "0.2"))
+            .wrap(middleware::Compress::default())
+            .wrap(middleware::Logger::default())
+            .service(actix_files::Files::new("/images", &image_dir).show_files_listing())
+            .service(api)
+            .service(actix_files::Files::new("/", &site_dir).index_file("index.html"))
+    })
+    .bind(opts.address)?
+    .workers(1)
+    .run()
+    .await
 }

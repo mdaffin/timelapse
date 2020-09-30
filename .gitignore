@@ -1,3 +1,4 @@
 **/target/
+/data/
 Dockerfile
 .resin-sync.yml

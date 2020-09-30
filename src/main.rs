@@ -40,7 +40,7 @@ async fn main() -> std::io::Result<()> {
     let image_dir = opts.image_dir.clone();
     info!("Starting camera loop");
     thread::spawn(move || loop {
-        info!("Running raspistill");
+        let image_name = format!("{}.jpg", Utc::now().to_rfc3339());
         let status = std::process::Command::new("raspistill")
             .args(&[
                 "-t",
@@ -50,14 +50,14 @@ async fn main() -> std::io::Result<()> {
                 "--awb",
                 "greyworld",
                 "-o",
-                image_dir.join(&format!("{}.jpg", Utc::now().to_rfc3339())).to_str().unwrap(),
+                image_dir.join(&image_name).to_str().unwrap(),
             ])
             .status();
         match status {
                 Ok(status) => match status.code() {
                     Some(code) if !status.success() => error!("raspistill exited with exit status {}", code),
                     None => error!("raspistill terminated by signal"),
-                    _ => debug!("raspistill ran successfully"),
+                    _ => info!("captured image {}", image_name),
                 },
                 Err(err) => error!("{}", err),
             }

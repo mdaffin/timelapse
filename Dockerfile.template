@@ -22,6 +22,7 @@ RUN cargo build --release
 FROM base
 ENV SITE_DIR=/src/site
 ENV IMAGE_DIR=/data
+ENV ADDR=0.0.0.0:80
 
 COPY --from=builder /build/app/target/release/timelapse /bin/
 COPY dist /src/site

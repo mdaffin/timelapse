@@ -1,6 +1,6 @@
 # Timelapse
 
-A raspberry pi based timelapse camera software. Takes images perodically on the
+A raspberry pi based timelapse camera software. Takes images periodically on the
 pi and presents them in a web UI for viewing and downloading.
 
 ## Getting started
@@ -11,7 +11,7 @@ Requires rust and node/npm.
 
 Requires raspistill in your path to be able to capture images (you will see a
 harmless error in the logs without it). But it can be run locally without this
-(just wont generate new images). Requires a `data` directory which images will
+(just won't generate new images). Requires a `data` directory which images will
 be served from and you can place any images in there for testing.
 
 ```bash
@@ -31,7 +31,7 @@ cargo run
 
 ## Deployment
 
-The repo is desinged to be deployed with [Balena]. To get started follow their
+The repo is designed to be deployed with [Balena]. To get started follow their
 [getting started guide] switching out the example repo for this one.
 
 The frontend is a static site that can be deployed to any static hosting

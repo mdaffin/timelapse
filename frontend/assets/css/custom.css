@@ -8,13 +8,13 @@ body, html {
 
 
 .img-container-primary {
-    width: 650px !important;
-    height: 450px !important;
+    width: 650px ;
+    height: 450px ;
 }
 
 
 .img-container-secondary {
-    width: 500px !important;
-    height: 350px !important;
+    width: 500px ;
+    height: 350px ;
 }
 

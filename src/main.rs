@@ -1,8 +1,8 @@
 use chrono::Utc;
 use log::*;
-use std::{thread, time, path::PathBuf};
+use std::{fs, path::PathBuf, thread, time};
 
-use actix_web::{get, middleware, App, HttpResponse, http::StatusCode, HttpServer};
+use actix_web::{get, http::StatusCode, middleware, App, HttpResponse, HttpServer};
 use clap::Clap;
 
 #[derive(Clap, Clone)]
@@ -33,7 +33,9 @@ async fn main() -> std::io::Result<()> {
 
     let opts: Opts = Opts::parse();
 
-    let image_dir = opts.image_dir.clone();
+    let image_dir = opts.image_dir.clone().join(&format!("{}", Utc::today()));
+    fs::create_dir_all(&image_dir)?;
+    
     info!("Starting camera loop");
     thread::spawn(move || loop {
         let image_name = format!("{}.jpg", Utc::now().to_rfc3339());
@@ -50,13 +52,15 @@ async fn main() -> std::io::Result<()> {
             ])
             .status();
         match status {
-                Ok(status) => match status.code() {
-                    Some(code) if !status.success() => error!("raspistill exited with exit status {}", code),
-                    None => error!("raspistill terminated by signal"),
-                    _ => info!("captured image {}", image_name),
-                },
-                Err(err) => error!("{}", err),
-            }
+            Ok(status) => match status.code() {
+                Some(code) if !status.success() => {
+                    error!("raspistill exited with exit status {}", code)
+                }
+                None => error!("raspistill terminated by signal"),
+                _ => info!("captured image {}", image_name),
+            },
+            Err(err) => error!("{}", err),
+        }
         thread::sleep(time::Duration::from_secs(60));
     });
 

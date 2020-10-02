@@ -1,0 +1,20 @@
+* {
+    font-family: Arial, sans-serif;
+}
+
+body, html {
+    height: 100%;
+}
+
+
+.img-container-primary {
+    width: 650px !important;
+    height: 450px !important;
+}
+
+
+.img-container-secondary {
+    width: 500px !important;
+    height: 350px !important;
+}
+

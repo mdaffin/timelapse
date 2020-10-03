@@ -31,14 +31,11 @@ async fn main() -> std::io::Result<()> {
     }
     env_logger::init();
 
-    let opts: Opts = Opts::parse();
-
-    let image_dir = opts.image_dir.clone().join(&format!("{}", Utc::today()));
-    fs::create_dir_all(&image_dir)?;
-    
     info!("Starting camera loop");
     thread::spawn(move || loop {
         let image_name = format!("{}.jpg", Utc::now().to_rfc3339());
+        let image_dir = Opts::parse().image_dir.clone().join(&format!("{}", Utc::today()));
+        fs::create_dir_all(&image_dir).unwrap();
         let status = std::process::Command::new("raspistill")
             .args(&[
                 "-t",
@@ -64,6 +61,7 @@ async fn main() -> std::io::Result<()> {
         thread::sleep(time::Duration::from_secs(60));
     });
 
+    let opts: Opts = Opts::parse();
     let image_dir = opts.image_dir.clone();
     info!("Starting webserver on {}", &opts.address);
     HttpServer::new(move || {

@@ -26,7 +26,6 @@ async fn api() -> HttpResponse {
         .body("{}")
 }
 
-
 #[get("/api/dates")]
 async fn days_with_photos() -> HttpResponse {
     let response = json!(dirs_with_images(&Opts::parse().image_dir).unwrap());
@@ -95,12 +94,10 @@ async fn main() -> std::io::Result<()> {
 
 fn dirs_with_images(image_dir: &Path) -> io::Result<Vec<String>> {
     fs::read_dir(image_dir)?
-      .filter(|entry| match entry {
-          Ok(entry) => entry.path().is_dir(),
-          Err(_) => true,
-      })
-      .map(|entry| {
-        Ok(entry?.file_name().into_string().unwrap())
-      })
-      .collect()
+        .filter(|entry| match entry {
+            Ok(entry) => entry.path().is_dir(),
+            Err(_) => true,
+        })
+        .map(|entry| Ok(entry?.file_name().into_string().unwrap()))
+        .collect()
 }

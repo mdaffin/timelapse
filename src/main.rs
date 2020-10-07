@@ -35,29 +35,27 @@ async fn days_with_photos() -> HttpResponse {
 }
 
 fn capture_image(image_dir: &Path) {
-    let image_dir = image_dir.join(&format!("{}", Utc::today()));
+    let now = Utc::now();
+
+    let image_dir = image_dir.join(&format!("{}", now.date().format("%F")));
     fs::create_dir_all(&image_dir).unwrap();
 
-    let image_name = format!("{}.jpg", Utc::now().to_rfc3339());
+    let image = image_dir.join(format!("{}.jpg", now.to_rfc3339()));
     let status = std::process::Command::new("raspistill")
         .args(&[
-            "-t",
-            "1000",
-            "-ss",
-            "10000",
-            "--awb",
-            "greyworld",
-            "-o",
-            image_dir.join(&image_name).to_str().unwrap(),
+            "--timeout=1000",
+            "--shutter=10000",
+            "--awb=greyworld",
+            "--output",
         ])
+        .arg(&image)
         .status();
+
     match status {
         Ok(status) => match status.code() {
-            Some(code) if !status.success() => {
-                error!("raspistill exited with exit status {}", code)
-            }
+            Some(_) if status.success() => info!("captured image {}", image.display()),
+            Some(code) => error!("raspistill exited with non-zero exit status {}", code),
             None => error!("raspistill terminated by signal"),
-            _ => info!("captured image {}", image_name),
         },
         Err(err) => error!("could not execute raspistill: {}", err),
     }

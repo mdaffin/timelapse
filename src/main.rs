@@ -59,7 +59,7 @@ fn capture_image(image_dir: &Path) {
             None => error!("raspistill terminated by signal"),
             _ => info!("captured image {}", image_name),
         },
-        Err(err) => error!("{}", err),
+        Err(err) => error!("could not execute raspistill: {}", err),
     }
 }
 

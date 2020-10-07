@@ -1,0 +1,3 @@
+#!/bin/bash
+
+curl -sSfL "https://via.placeholder.com/350x150" -o "${@: -1}"

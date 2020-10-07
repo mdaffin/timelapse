@@ -5,24 +5,15 @@ pi and presents them in a web UI for viewing and downloading.
 
 ## Getting started
 
-Requires rust and node/npm.
+Requires rust (for the backend) and node/npm (for the frontend).
 
 ### Backend
 
-Requires raspistill in your path to be able to capture images (you will see a
-harmless error in the logs without it). But it can be run locally without this
-(just won't generate new images). Requires a `data` directory which images will
-be served from and you can place any images in there for testing.
+There is a mock raspistill script in `mock-bin` which downloads a placeholder
+image. Add this to your path to stop the timelapse binary from erroring.
 
 ```bash
-UPSTREAM=https://49a5b645a954379cec90fa82218cc69f.balena-devices.com/images
-mkdir data
-wget "$UPSTREAM/2020-09-30T22:08:35.471236400+00:00.jpg" -P data/
-wget "$UPSTREAM/2020-09-30T22:09:37.202233452+00:00.jpg" -P data/
-wget "$UPSTREAM/2020-09-30T22:10:38.934747486+00:00.jpg" -P data/
-wget "$UPSTREAM/2020-09-30T22:11:40.668463506+00:00.jpg" -P data/
-
-cargo run
+PATH=$PWD/mock-bin:$PATH cargo run
 ```
 
 ### Frontend

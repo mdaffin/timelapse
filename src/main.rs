@@ -34,47 +34,50 @@ async fn days_with_photos() -> HttpResponse {
         .body(response)
 }
 
+fn capture_image(image_dir: &Path) {
+    let image_dir = image_dir.join(&format!("{}", Utc::today()));
+    fs::create_dir_all(&image_dir).unwrap();
+
+    let image_name = format!("{}.jpg", Utc::now().to_rfc3339());
+    let status = std::process::Command::new("raspistill")
+        .args(&[
+            "-t",
+            "1000",
+            "-ss",
+            "10000",
+            "--awb",
+            "greyworld",
+            "-o",
+            image_dir.join(&image_name).to_str().unwrap(),
+        ])
+        .status();
+    match status {
+        Ok(status) => match status.code() {
+            Some(code) if !status.success() => {
+                error!("raspistill exited with exit status {}", code)
+            }
+            None => error!("raspistill terminated by signal"),
+            _ => info!("captured image {}", image_name),
+        },
+        Err(err) => error!("{}", err),
+    }
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info,actix_server=info,actix_web=info");
     }
     env_logger::init();
+    let opts: Opts = Opts::parse();
 
     info!("Starting camera loop");
+    let image_dir = opts.image_dir.clone();
     thread::spawn(move || loop {
-        let image_name = format!("{}.jpg", Utc::now().to_rfc3339());
-        let image_dir = Opts::parse()
-            .image_dir
-            .clone()
-            .join(&format!("{}", Utc::today()));
-        fs::create_dir_all(&image_dir).unwrap();
-        let status = std::process::Command::new("raspistill")
-            .args(&[
-                "-t",
-                "1000",
-                "-ss",
-                "10000",
-                "--awb",
-                "greyworld",
-                "-o",
-                image_dir.join(&image_name).to_str().unwrap(),
-            ])
-            .status();
-        match status {
-            Ok(status) => match status.code() {
-                Some(code) if !status.success() => {
-                    error!("raspistill exited with exit status {}", code)
-                }
-                None => error!("raspistill terminated by signal"),
-                _ => info!("captured image {}", image_name),
-            },
-            Err(err) => error!("{}", err),
-        }
+        capture_image(&image_dir);
         thread::sleep(time::Duration::from_secs(60));
     });
 
-    let opts: Opts = Opts::parse();
     let image_dir = opts.image_dir.clone();
     info!("Starting webserver on {}", &opts.address);
     HttpServer::new(move || {

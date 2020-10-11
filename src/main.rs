@@ -4,7 +4,7 @@ use serde_json::json;
 use std::path::Path;
 use std::{fs, io, path::PathBuf, thread, time};
 
-use actix_web::{get, http::StatusCode, middleware, App, HttpResponse, HttpServer};
+use actix_web::{get, http::StatusCode, middleware, web, App, HttpResponse, HttpServer};
 use clap::Clap;
 
 #[derive(Clap, Clone)]
@@ -29,6 +29,15 @@ async fn api() -> HttpResponse {
 #[get("/api/dates")]
 async fn days_with_photos() -> HttpResponse {
     let response = json!(dirs_with_images(&Opts::parse().image_dir).unwrap());
+    HttpResponse::build(StatusCode::OK)
+        .content_type("text/json; charset=utf-8")
+        .body(response)
+}
+
+#[get("/api/images/{day}")]
+async fn get_photos_for_day(day: web::Path<String>) -> HttpResponse {
+    let response =
+        json!(photos_for_day(&Opts::parse().image_dir.join(&format!("{}", day))).unwrap());
     HttpResponse::build(StatusCode::OK)
         .content_type("text/json; charset=utf-8")
         .body(response)
@@ -86,6 +95,7 @@ async fn main() -> std::io::Result<()> {
             .service(actix_files::Files::new("/images", &image_dir).show_files_listing())
             .service(api)
             .service(days_with_photos)
+            .service(get_photos_for_day)
     })
     .bind(opts.address)?
     .workers(1)
@@ -100,5 +110,11 @@ fn dirs_with_images(image_dir: &Path) -> io::Result<Vec<String>> {
             Err(_) => true,
         })
         .map(|entry| Ok(entry?.file_name().into_string().unwrap()))
+        .collect()
+}
+
+fn photos_for_day(dir: &Path) -> io::Result<Vec<String>> {
+    fs::read_dir(dir)?
+        .map(|entry| Ok(entry?.path().into_os_string().into_string().unwrap()))
         .collect()
 }
